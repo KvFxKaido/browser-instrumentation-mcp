@@ -1,5 +1,7 @@
 # Browser Instrumentation MCP Server
 
+[![Tests](https://github.com/KvFxKaido/browser-instrumentation-mcp/actions/workflows/tests.yml/badge.svg)](https://github.com/KvFxKaido/browser-instrumentation-mcp/actions/workflows/tests.yml)
+
 A Model Context Protocol (MCP) server for browser **instrumentation** using Playwright. Prioritizes observation over action.
 
 > **This server does not attempt to make browser automation reliable.**
