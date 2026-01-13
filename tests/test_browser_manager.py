@@ -1,7 +1,5 @@
 import pytest
 
-from browser_instrumentation_mcp.models import SessionStatus
-
 
 @pytest.mark.asyncio
 async def test_create_and_destroy_session(manager, fake_storage) -> None:
