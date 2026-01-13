@@ -1,10 +1,12 @@
 """Browser session lifecycle management."""
 
+from datetime import datetime
 from typing import Optional
 
+from . import storage as storage_module
 from .backends.base import BrowserBackend
 from .backends.playwright_backend import PlaywrightBackend
-from .models import ActionResult, EventLog
+from .models import ActionResult, EventLog, SessionStatus
 
 
 class BrowserManager:
@@ -14,14 +16,42 @@ class BrowserManager:
     Observation is primary; actions require explicit escalation.
     """
 
-    def __init__(self, backend: Optional[BrowserBackend] = None):
+    def __init__(
+        self,
+        backend: Optional[BrowserBackend] = None,
+        storage: Optional[object] = None,
+    ):
         """Initialize browser manager.
 
         Args:
             backend: Browser backend to use. Defaults to PlaywrightBackend.
+            storage: Optional storage provider for persistence.
         """
         self._backend = backend or PlaywrightBackend()
+        self._storage = storage or storage_module
         self._initialized = False
+
+    async def _persist_session(self, name: str) -> None:
+        """Persist current session metadata."""
+        if self._storage is None:
+            return
+
+        session = await self._backend.get_session(name)
+        if session is None:
+            created_at = datetime.now()
+            status = SessionStatus.ACTIVE
+            escalation_reason = None
+        else:
+            created_at = getattr(session, "created_at", datetime.now())
+            status = getattr(session, "status", SessionStatus.ACTIVE)
+            escalation_reason = getattr(session, "escalation_reason", None)
+
+        await self._storage.save_session(
+            name=name,
+            status=status,
+            created_at=created_at,
+            escalation_reason=escalation_reason,
+        )
 
     @property
     def backend(self) -> BrowserBackend:
@@ -58,16 +88,21 @@ class BrowserManager:
         if not self._initialized:
             await self.initialize()
 
-        return await self._backend.create_session(
+        session_name = await self._backend.create_session(
             name=name,
             headless=headless,
             viewport_width=viewport_width,
             viewport_height=viewport_height,
         )
+        await self._persist_session(session_name)
+        return session_name
 
     async def destroy_session(self, name: str) -> bool:
         """Destroy a session."""
-        return await self._backend.destroy_session(name)
+        destroyed = await self._backend.destroy_session(name)
+        if destroyed and self._storage is not None:
+            await self._storage.delete_session(name)
+        return destroyed
 
     async def list_sessions(self) -> list[dict]:
         """List all sessions."""
@@ -79,7 +114,9 @@ class BrowserManager:
 
     async def escalate_session(self, name: str, reason: str) -> dict:
         """Escalate session to allow actions."""
-        return await self._backend.escalate_session(name, reason)
+        result = await self._backend.escalate_session(name, reason)
+        await self._persist_session(name)
+        return result
 
     # =========================================================================
     # Event Log
