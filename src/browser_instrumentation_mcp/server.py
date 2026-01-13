@@ -68,6 +68,30 @@ async def browser_session_create(
 
 
 @mcp.tool()
+async def browser_session_connect(name: str, cdp_url: str) -> str:
+    """Connect to an existing browser session over CDP.
+
+    Sessions start in observation-only mode. Actions require explicit escalation.
+
+    Args:
+        name: Unique name for the session (e.g., "main", "test-session")
+        cdp_url: CDP websocket URL (e.g., ws://127.0.0.1:9222/devtools/browser/...)
+
+    Returns:
+        Confirmation message with session name and status
+    """
+    manager = get_manager()
+
+    try:
+        session_name = await manager.connect_session(name=name, cdp_url=cdp_url)
+        return f"Connected session '{session_name}' (observation-only mode)"
+    except ValueError as e:
+        return f"Error: {e}"
+    except Exception as e:
+        return f"Failed to connect session: {e}"
+
+
+@mcp.tool()
 async def browser_session_list() -> str:
     """List all browser sessions with their status.
 
