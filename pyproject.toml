@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "browser-instrumentation-mcp"
+version = "0.1.0"
+description = "MCP server for browser instrumentation - observation first, action second"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.0.0",
+    "playwright>=1.40.0",
+    "pydantic>=2.0.0",
+]
+
+[project.scripts]
+browser-instrumentation-mcp = "browser_instrumentation_mcp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/browser_instrumentation_mcp"]
