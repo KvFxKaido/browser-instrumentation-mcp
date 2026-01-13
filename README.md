@@ -166,16 +166,40 @@ browser_instrumentation_mcp/
 │   └── playwright_backend.py  # Playwright implementation
 ```
 
-## Development
+## Development Setup
 
 ```bash
 git clone https://github.com/yourusername/browser-instrumentation-mcp.git
 cd browser-instrumentation-mcp
-pip install -e .
+pip install -e .[dev]
 playwright install chromium
 
 # Run directly
 python -m browser_instrumentation_mcp.server
+```
+
+## Testing
+
+```bash
+# Unit tests only (fast, no browser required)
+pytest -m "not integration"
+
+# All tests (includes real browser and CDP integration tests)
+pytest
+```
+
+Integration tests are marked with `@pytest.mark.integration` and may require:
+
+- Playwright browsers installed (`playwright install chromium`)
+- Network access for real navigation
+- A running CDP-enabled browser for CDP tests
+
+To run CDP integration tests, start a Chromium instance with a remote debugging
+port and set `BIMCP_CDP_URL`, for example:
+
+```bash
+set BIMCP_CDP_URL=http://localhost:9222
+pytest -m integration -k cdp
 ```
 
 ## License
